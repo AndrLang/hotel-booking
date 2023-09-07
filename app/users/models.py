@@ -9,3 +9,5 @@ class Users(Base):
     email: Mapped[str]
     hashed_password: Mapped[str]
 
+    def __str__(self):
+        return f" Пользователь {self.email}"

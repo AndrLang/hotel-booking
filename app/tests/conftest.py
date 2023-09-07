@@ -13,9 +13,13 @@ from app.bookings.models import Bookings
 from app.hotels.models import Hotels
 from app.hotels.rooms.models import Rooms
 from app.users.models import Users
+from app.main import app as fastapi_app
+
+from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 async def prepare_database():
     assert settings.MODE == "TEST"
 
@@ -24,7 +28,7 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.create_all)
 
     def open_mock_json(model: str):
-        with open(f"/Users/andreandre/code/practice/hotel_booking/app/tests/mock_{model}.json", encoding="utf-8") as file:
+        with open(f"/Users/andreandre/code/projects/hotel_booking/app/tests/mock_{model}.json", encoding="utf-8") as file:
             return json.load(file)
 
     hotels = open_mock_json("hotels")
@@ -50,10 +54,16 @@ async def prepare_database():
         await session.commit()
 
 
-# from the documentation for pytest-asyncio
 @pytest.fixture(scope="session")
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(scope="function")
+async def ac():
+    """Асинхронный клиент для тестирования эндпоинтов"""
+    async with AsyncClient(app=fastapi_app, base_url="http://test") as ac:
+        yield ac
